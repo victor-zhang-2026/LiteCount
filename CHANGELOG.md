@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2 — 2026-11-09
+
+- 修复 1.0.1 悬停滚动引入的缺陷：未悬停时长名称全文溢出并遮挡倒计时列；现在文本严格裁剪在名称区域内，悬停时往返滚动显示全部内容。
+- Fixed a 1.0.1 regression where unhovered long names overlapped the countdown column; text is now clipped to its area and scrolls on hover.
+
 ## 1.0.1 — 2026-11-09
 
 - 列表行事项名称过长时，鼠标悬停后自动往返滚动显示完整内容，不再以省略号截断。

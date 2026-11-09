@@ -609,6 +609,9 @@ struct MarqueeText: View {
                 )
         }
         .frame(height: 18, alignment: .leading)
+        // Clip to the row's text area so the unhovered state never overlaps the countdown column.
+        .clipped()
+        .contentShape(Rectangle())
         .onHover { hovering = $0 }
     }
 }
