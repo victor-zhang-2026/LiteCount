@@ -29,10 +29,11 @@ LiteCount is a native macOS countdown tool. Set a name and a target time, and it
 
 ## 截图 / Screenshots
 
-| | |
+| 浅色面板 / Light | 编辑器 / Editor |
 |---|---|
-| ![面板 / Panel](docs/images/panel.png) | ![深色 / Dark](docs/images/panel-dark.png) |
-| ![编辑器 / Editor](docs/images/editor.png) | ![选择器 / Picker](docs/images/date-picker.png) |
+| ![浅色面板 / Light panel](docs/images/panel.png) | ![编辑器 / Editor](docs/images/editor.png) |
+| **深色面板 / Dark** | **时间选择器 / Picker** |
+| ![深色面板 / Dark panel](docs/images/panel-dark.png) | ![选择器 / Picker](docs/images/date-picker.png) |
 
 ## 安装 / Install
 

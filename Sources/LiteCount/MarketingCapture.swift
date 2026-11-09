@@ -24,6 +24,7 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
     private var output = URL(fileURLWithPath: "marketing/captures")
     private var editorWindow: NSWindow?
     private var pickerWindow: NSWindow?
+    private var originalAppearance: String?
     private var steps: [(delay: TimeInterval, action: () -> Void)] = []
     private var stepIndex = 0
 
@@ -32,6 +33,9 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
         output = URL(fileURLWithPath: env["LITECOUNT_CAPTURE_DIR"] ?? "marketing/captures", isDirectory: true)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let isolatedDefaults = UserDefaults(suiteName: "app.litecount.marketing")!
+
+        // Remember the pre-capture appearance so it can be restored exactly.
+        originalAppearance = UserDefaults.standard.string(forKey: "appAppearance")
 
         store = CountdownStore(fileURL: output.appendingPathComponent("isolated-data/items.json"))
         store.deleteAllForCapture()
@@ -42,18 +46,11 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
         controller.openPinned()
 
         steps = [
-            (delay: 1.4, action: { self.captureView(self.controller.listPanel.contentView, "panel-list.png") }),
+            // Force light for the base captures so results are deterministic.
+            (delay: 0.3, action: { UserDefaults.standard.set("light", forKey: "appAppearance") }),
+            (delay: 0.9, action: { self.captureView(self.controller.listPanel.contentView, "panel-list.png") }),
             (delay: 0.3, action: { self.captureView(self.controller.triggerPanel.contentView, "trigger.png") }),
-            (delay: 0.3, action: { UserDefaults.standard.set("dark", forKey: "appAppearance") }),
-            (delay: 0.9, action: { self.captureView(self.controller.listPanel.contentView, "panel-list-dark.png") }),
-            (delay: 0.3, action: {
-                if let previous = UserDefaults.standard.object(forKey: "appAppearance") {
-                    UserDefaults.standard.set(previous, forKey: "appAppearance")
-                } else {
-                    UserDefaults.standard.removeObject(forKey: "appAppearance")
-                }
-                self.openEditorWindow()
-            }),
+            (delay: 0.3, action: { self.openEditorWindow() }),
             (delay: 1.0, action: {
                 self.captureView(self.editorWindow?.contentView, "editor.png")
                 self.editorWindow?.orderOut(nil)
@@ -63,7 +60,15 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
                 self.captureView(self.pickerWindow?.contentView, "date-picker.png")
                 self.pickerWindow?.orderOut(nil)
             }),
+            (delay: 0.3, action: { UserDefaults.standard.set("dark", forKey: "appAppearance") }),
+            (delay: 0.9, action: { self.captureView(self.controller.listPanel.contentView, "panel-list-dark.png") }),
             (delay: 0.3, action: {
+                // Restore the exact pre-capture value, including "was unset".
+                if let original = self.originalAppearance {
+                    UserDefaults.standard.set(original, forKey: "appAppearance")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "appAppearance")
+                }
                 print("MARKETING_CAPTURE_DONE")
                 NSApplication.shared.terminate(nil)
             })
@@ -138,7 +143,12 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
         window.backgroundColor = .clear
         window.isOpaque = false
         let picker = DateTimePickerPopoverView(date: .constant(Date.now.addingTimeInterval(3 * 86400 + 5400).roundedToMinute))
-        window.contentView = NSHostingView(rootView: picker)
+        let content = picker.background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .windowBackgroundColor))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        window.contentView = NSHostingView(rootView: content)
         window.center()
         window.orderFrontRegardless()
         pickerWindow = window

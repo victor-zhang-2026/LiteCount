@@ -204,52 +204,63 @@ struct DateTimePickerPopoverView: View {
     }
 
     private var dayGrid: some View {
-        let daysInMonth = calendar.range(of: .day, in: .month, for: displayedMonth)?.count ?? 0
-        let firstWeekdayIndex = (Int(calendar.component(.weekday, from: displayedMonth.startOfMonth)) - calendar.firstWeekday + 7) % 7
-        let today = calendar.startOfDay(for: Date.now)
-        let selectedDay = calendar.startOfDay(for: date)
-
-        return LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7),
-            spacing: 2
-        ) {
-            ForEach(0..<(firstWeekdayIndex + daysInMonth), id: \.self) { index in
-                if index < firstWeekdayIndex {
-                    Color.clear.frame(height: 28)
-                } else {
-                    let dayNumber = index - firstWeekdayIndex + 1
-                    let dayDate = calendar.date(byAdding: .day, value: dayNumber - 1, to: displayedMonth.startOfMonth) ?? displayedMonth
-                    let isSelected = calendar.isDate(dayDate, inSameDayAs: selectedDay)
-                    let isToday = calendar.isDate(dayDate, inSameDayAs: today)
-
-                    Button {
-                        let timeComponents = calendar.dateComponents([.hour, .minute], from: date)
-                        var dayComponents = calendar.dateComponents([.year, .month, .day], from: dayDate)
-                        dayComponents.hour = timeComponents.hour
-                        dayComponents.minute = timeComponents.minute
-                        date = calendar.date(from: dayComponents) ?? dayDate
-                    } label: {
-                        Text("\(dayNumber)")
-                            .font(.system(size: 12.5, weight: isToday ? .semibold : .regular, design: .rounded))
-                            .foregroundStyle(isSelected ? .white : (isToday ? Color.liteCountBlue : Color.primary))
-                            .frame(width: 28, height: 28)
-                            .background(
-                                isSelected
-                                    ? Color.liteCountBlue
-                                    : Color.liteCountSeparator.opacity(0.001),
-                                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            )
-                            .overlay {
-                                if isToday && !isSelected {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .stroke(Color.liteCountBlue.opacity(0.55), lineWidth: 1)
-                                }
-                            }
+        // Eager Grid (not LazyVGrid) so every day cell renders reliably, including offscreen capture.
+        Grid(alignment: .center, horizontalSpacing: 2, verticalSpacing: 2) {
+            ForEach(dayCellRows, id: \.self) { row in
+                GridRow {
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
+                        if let dayNumber = cell {
+                            dayButton(dayNumber)
+                        } else {
+                            Color.clear.frame(height: 28)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
+    }
+
+    private var dayCellRows: [[Int?]] {
+        let daysInMonth = calendar.range(of: .day, in: .month, for: displayedMonth)?.count ?? 0
+        let firstWeekdayIndex = (Int(calendar.component(.weekday, from: displayedMonth.startOfMonth)) - calendar.firstWeekday + 7) % 7
+        var cells: [Int?] = Array(repeating: nil, count: firstWeekdayIndex)
+        cells.append(contentsOf: (1...daysInMonth).map { Optional($0) })
+        while cells.count % 7 != 0 { cells.append(nil) }
+        return stride(from: 0, to: cells.count, by: 7).map { start in
+            Array(cells[start..<min(start + 7, cells.count)])
+        }
+    }
+
+    private func dayButton(_ dayNumber: Int) -> some View {
+        let dayDate = calendar.date(byAdding: .day, value: dayNumber - 1, to: displayedMonth.startOfMonth) ?? displayedMonth
+        let isSelected = calendar.isDate(dayDate, inSameDayAs: calendar.startOfDay(for: date))
+        let isToday = calendar.isDate(dayDate, inSameDayAs: calendar.startOfDay(for: Date.now))
+
+        return Button {
+            let timeComponents = calendar.dateComponents([.hour, .minute], from: date)
+            var dayComponents = calendar.dateComponents([.year, .month, .day], from: dayDate)
+            dayComponents.hour = timeComponents.hour
+            dayComponents.minute = timeComponents.minute
+            date = calendar.date(from: dayComponents) ?? dayDate
+        } label: {
+            Text("\(dayNumber)")
+                .font(.system(size: 12.5, weight: isToday ? .semibold : .regular, design: .rounded))
+                .foregroundStyle(isSelected ? .white : (isToday ? Color.liteCountBlue : Color.primary))
+                .frame(width: 28, height: 28)
+                .background(
+                    isSelected
+                        ? Color.liteCountBlue
+                        : Color.liteCountSeparator.opacity(0.001),
+                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                )
+                .overlay {
+                    if isToday && !isSelected {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(Color.liteCountBlue.opacity(0.55), lineWidth: 1)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     private func timeColumn(header: String, range: Range<Int>, selected: Int, onSelect: @escaping (Int) -> Void) -> some View {
