@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — 2026-11-09
+
+- 列表行事项名称过长时，鼠标悬停后自动往返滚动显示完整内容，不再以省略号截断。
+- Row names that overflow now ping-pong scroll on hover, replacing the ellipsis truncation.
+
 ## 1.0.0 — 2026-11-09
 
 - 桌面悬浮球：蓝色主题、固定沙漏图标、事项总数角标；悬停展开列表、延迟收起、自由拖动并记住位置。

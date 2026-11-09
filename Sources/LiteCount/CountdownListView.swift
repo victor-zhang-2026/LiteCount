@@ -267,10 +267,7 @@ private struct CountdownRow: View {
                 .frame(width: 24, height: 24)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(item.name)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(1)
+                MarqueeText(text: item.name)
                 Text(AppFormat.dateTimeText(item.targetDate))
                     .font(.system(size: 10))
                     .foregroundStyle(Color.liteCountSecondaryText)
@@ -576,6 +573,50 @@ struct CountdownEditor: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Single-line text that ping-pong scrolls while hovered when it overflows,
+/// so long item names stay fully readable without widening the row.
+struct MarqueeText: View {
+    let text: String
+    var font: Font = .system(size: 13, weight: .medium)
+
+    @State private var hovering = false
+    @State private var contentWidth: CGFloat = 0
+    private let tailGap: CGFloat = 12
+
+    var body: some View {
+        GeometryReader { geo in
+            let overflow = max(0, contentWidth - geo.size.width)
+            Text(text)
+                .font(font)
+                .foregroundStyle(Color.primary)
+                .lineLimit(1)
+                .fixedSize()
+                .background {
+                    GeometryReader { inner in
+                        Color.clear.preference(key: MarqueeContentWidthKey.self, value: inner.size.width)
+                    }
+                }
+                .onPreferenceChange(MarqueeContentWidthKey.self) { contentWidth = $0 }
+                .offset(x: hovering && overflow > 1 ? -(overflow + tailGap) : 0)
+                .animation(
+                    hovering && overflow > 1
+                        ? .linear(duration: max(2.5, Double(overflow + tailGap) / 40)).repeatForever(autoreverses: true)
+                        : .easeOut(duration: 0.2),
+                    value: hovering
+                )
+        }
+        .frame(height: 18, alignment: .leading)
+        .onHover { hovering = $0 }
+    }
+}
+
+private struct MarqueeContentWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

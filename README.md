@@ -37,7 +37,7 @@ LiteCount is a native macOS countdown tool. Set a name and a target time, and it
 
 ## 安装 / Install
 
-1. 从 [Releases](https://github.com/victor-zhang-2026/LiteCount/releases/latest) 下载 `LiteCount-1.0.0-macOS-arm64.zip` 与 `SHA256SUMS`。
+1. 从 [Releases](https://github.com/victor-zhang-2026/LiteCount/releases/latest) 下载最新 `LiteCount-<版本>-macOS-arm64.zip` 与 `SHA256SUMS`。
    Download the ZIP and `SHA256SUMS` from Releases.
 2. 校验：`shasum -a 256 -c SHA256SUMS`（在下载目录执行）。Verify the checksum.
 3. 解压并将 `LiteCount.app` 拖入「应用程序」，首次打开需右键 →「打开」（ad-hoc 签名、未公证）。
