@@ -1,0 +1,19 @@
+# .gitignore — LiteCount
+
+.DS_Store
+.build/
+.swiftpm/
+build/
+qa/
+marketing/
+release/**/*.zip
+release/**/download-verification/
+
+# 项目记忆与本地文档 / Local project memory
+AGENTS.md
+plan.md
+progress.md
+decision.md
+handoff.md
+bug.md
+glossary.md
