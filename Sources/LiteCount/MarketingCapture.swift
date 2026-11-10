@@ -120,7 +120,7 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
 
     private func openEditorWindow() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 352),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -130,7 +130,7 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
         window.isOpaque = false
         let editor = CountdownEditor(
             controller: controller,
-            editing: nil,
+            editing: store.upcoming(at: .now).first,
             onSave: { _, _, _, _ in },
             onDelete: {},
             onCancel: {}

@@ -30,10 +30,7 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
 
     // The visible ball remains 42 pt; the extra transparent space prevents its circular shadow from clipping.
     private let triggerSize = NSSize(width: 48, height: 48)
-    private var isEditorVisible = false
-    private var panelSize: NSSize {
-        NSSize(width: 360, height: isEditorVisible ? 480 : 352)
-    }
+    private let panelSize = NSSize(width: 360, height: 352)
     private let triggerScreenMargin: CGFloat = 8
     private let panelScreenMargin: CGFloat = 12
     private let triggerPanelGap: CGFloat = 8
@@ -86,13 +83,6 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         guard isOpen else { return }
         isPinned = true
         cancelClose()
-    }
-
-    func setEditorVisible(_ visible: Bool) {
-        guard isEditorVisible != visible else { return }
-        let currentTop = listPanel.frame.maxY
-        isEditorVisible = visible
-        if isOpen { positionListPanel(preferredTopY: currentTop) }
     }
 
     @discardableResult

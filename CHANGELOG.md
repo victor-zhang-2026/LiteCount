@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.5 — 2026-11-10
+
+- 新增与编辑面板统一为列表的 360×352 尺寸；名称框左侧可选择图标和颜色，日期时间下方直接显示实时倒计时。
+- 切换中英文时保留未保存的事项名称、目标时间、图标和颜色。
+- New and edit panels now match the list's 360×352 size. Choose an icon and color from the name field; a live countdown appears beneath the target time.
+- Switching languages preserves the unsaved name, target time, icon, and color.
+
 ## 1.0.4 — 2026-11-10
 
 - 到期事项自动移入右上角「已过期」，主列表与悬浮球角标只计进行中事项；过期事项保留原有编辑、删除操作。

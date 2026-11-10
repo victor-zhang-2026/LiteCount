@@ -9,7 +9,7 @@ struct CountdownListView: View {
     @State private var showingExpired = false
     @State private var editingItem: CountdownItem?
     @State private var deleteCandidate: CountdownItem?
-    @State private var languageVersion = UUID()
+    @State private var languageLocale = AppFormat.locale()
     @State private var panelLockVersion = UUID()
     @AppStorage("appAppearance") private var appearanceRawValue = AppearanceMode.light.rawValue
 
@@ -52,7 +52,7 @@ struct CountdownListView: View {
                     }
                 }
             }
-            .id(languageVersion)
+            .environment(\.locale, languageLocale)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             if deleteCandidate != nil {
@@ -61,7 +61,7 @@ struct CountdownListView: View {
                 deletionConfirmation
             }
         }
-        .frame(width: 360)
+        .frame(width: 360, height: 352)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .preferredColorScheme(appearanceMode.colorScheme)
         .onHover(perform: controller.listHoverChanged)
@@ -75,7 +75,6 @@ struct CountdownListView: View {
     private func closeEditor() {
         showingEditor = false
         editingItem = nil
-        controller.setEditorVisible(false)
     }
 
     private var deletionConfirmation: some View {
@@ -126,7 +125,6 @@ struct CountdownListView: View {
         // The editor beneath the overlay referenced the deleted item.
         showingEditor = false
         editingItem = nil
-        controller.setEditorVisible(false)
     }
 
     private var header: some View {
@@ -159,7 +157,6 @@ struct CountdownListView: View {
                 Button {
                     editingItem = nil
                     showingEditor = true
-                    controller.setEditorVisible(true)
                     controller.pinPanel()
                 } label: {
                     Image(systemName: "plus")
@@ -171,7 +168,7 @@ struct CountdownListView: View {
 
             Button {
                 L10n.toggleLanguage()
-                languageVersion = UUID()
+                languageLocale = AppFormat.locale()
                 controller.refreshAbout()
             } label: {
                 Image(systemName: "globe")
@@ -262,7 +259,6 @@ struct CountdownListView: View {
                         onEdit: {
                             editingItem = item
                             showingEditor = true
-                            controller.setEditorVisible(true)
                             controller.pinPanel()
                         },
                         onDelete: {
@@ -369,7 +365,6 @@ struct CountdownEditor: View {
     @State private var date: Date
     @State private var icon: String
     @State private var colorHex: String
-    @State private var iconSelectionReadyAt = Date.distantPast
 
     init(controller: FloatingWindowController, editing: CountdownItem?, onSave: @escaping (String, Date, String, String) -> Void, onDelete: @escaping () -> Void, onCancel: @escaping () -> Void) {
         self.controller = controller
@@ -384,12 +379,12 @@ struct CountdownEditor: View {
     }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { _ in
-            editorContent
+        TimelineView(.periodic(from: .now, by: 1)) { timeline in
+            editorContent(at: timeline.date)
         }
     }
 
-    private var editorContent: some View {
+    private func editorContent(at now: Date) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             nameField
                 .padding(.horizontal, 12)
@@ -417,29 +412,12 @@ struct CountdownEditor: View {
                     .padding(.top, 6)
             }
 
-            Text(L10n.chooseColor)
-                .font(.system(size: 11))
-                .foregroundStyle(Color.liteCountSecondaryText)
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
+            Spacer(minLength: 14)
 
-            colorRow
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
+            countdownDisplay(at: now)
+                .padding(.horizontal, 12)
 
-            Text(L10n.chooseIcon)
-                .font(.system(size: 11))
-                .foregroundStyle(Color.liteCountSecondaryText)
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-
-            ScrollView {
-                iconGrid
-                    .padding(.horizontal, 12)
-                    .padding(.top, 6)
-                    .padding(.bottom, 4)
-            }
-            .onAppear { iconSelectionReadyAt = Date.now.addingTimeInterval(0.45) }
+            Spacer(minLength: 14)
 
             HStack(spacing: 8) {
                 if editing != nil {
@@ -497,18 +475,52 @@ struct CountdownEditor: View {
         onSave(name, date.roundedToMinute, icon, colorHex)
     }
 
+    private func countdownDisplay(at now: Date) -> some View {
+        let remaining = remainingText(until: date, from: now)
+        return HStack(spacing: 12) {
+            Image(systemName: "hourglass")
+                .font(.system(size: 20, weight: .medium))
+            Text(remaining ?? L10n.expired)
+                .font(.system(size: 25, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .foregroundStyle(remaining == nil ? Color.liteCountSecondaryText : colorHex.color)
+        .frame(maxWidth: .infinity)
+        .frame(height: 88)
+        .background(colorHex.color.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(colorHex.color.opacity(0.15), lineWidth: 1)
+        }
+    }
+
     private var nameField: some View {
-        TextField(L10n.namePlaceholder, text: $name)
-            .textFieldStyle(.plain)
-            .font(.system(size: 14))
-            .tint(Color.liteCountBlue)
-            .frame(height: 40)
-            .padding(.horizontal, 13)
-            .background(Color.liteCountElevated, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .stroke(Color.liteCountSeparator, lineWidth: 1)
+        HStack(spacing: 8) {
+            PopoverField(popoverSize: NSSize(width: 360, height: 400)) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(colorHex.color, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .help(L10n.chooseIcon)
+            } popoverContent: {
+                IconPickerPopoverView(icon: $icon, colorHex: $colorHex)
             }
+            .frame(width: 32, height: 32)
+            TextField(L10n.namePlaceholder, text: $name)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14))
+                .tint(Color.liteCountBlue)
+        }
+        .frame(height: 40)
+        .padding(.horizontal, 6)
+        .background(Color.liteCountElevated, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(Color.liteCountSeparator, lineWidth: 1)
+        }
     }
 
     private func pickerField(_ text: String, symbol: String) -> some View {
@@ -533,12 +545,40 @@ struct CountdownEditor: View {
         }
     }
 
+}
+
+private struct IconPickerPopoverView: View {
+    @Binding var icon: String
+    @Binding var colorHex: String
+    @State private var iconSelectionReadyAt = Date.distantPast
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(L10n.chooseColor)
+                .font(.system(size: 11))
+                .foregroundStyle(Color.liteCountSecondaryText)
+                .padding(.bottom, 8)
+            colorRow
+                .padding(.bottom, 16)
+            Text(L10n.chooseIcon)
+                .font(.system(size: 11))
+                .foregroundStyle(Color.liteCountSecondaryText)
+                .padding(.bottom, 8)
+            ScrollView(.vertical) {
+                iconGrid
+                    .padding(.bottom, 4)
+            }
+        }
+        .padding(12)
+        .frame(width: 360, height: 400)
+        .onAppear { iconSelectionReadyAt = Date.now.addingTimeInterval(0.45) }
+    }
+
     private var colorRow: some View {
         HStack(spacing: 8) {
             ForEach(IconPalette.hexColors, id: \.self) { hex in
                 let isSelected = hex == colorHex
                 Button {
-                    controller.pinPanel()
                     colorHex = hex
                 } label: {
                     Circle()
@@ -557,7 +597,6 @@ struct CountdownEditor: View {
     }
 
     private var iconGrid: some View {
-        // Eager Grid (not LazyVGrid) so all symbols render reliably, including offscreen capture.
         Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 6) {
             ForEach(iconRows, id: \.self) { row in
                 GridRow {
@@ -580,7 +619,6 @@ struct CountdownEditor: View {
         let selected = symbol == icon
         return Button {
             guard Date.now >= iconSelectionReadyAt else { return }
-            controller.pinPanel()
             icon = symbol
         } label: {
             Image(systemName: symbol)

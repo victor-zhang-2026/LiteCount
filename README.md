@@ -26,6 +26,8 @@ LiteCount is a native macOS countdown tool. Set a name and a target time, and it
   Countdowns start on creation, sort near-to-far, and survive restarts.
 - **合并式时间选择** / **Combined picker** — 日历与时/分在同一浮层选择，选完即存；格式跟随应用语言。
   A single sheet combines a month calendar with hour/minute columns.
+- **紧凑编辑** / **Compact editing** — 新增与编辑面板和列表等尺寸；从名称框左侧选择图标与颜色，目标时间下方直接显示实时倒计时；切换语言保留未保存草稿。
+  New and edit panels match the list size. Pick an icon and color from the name field, see a live countdown below the target time, and keep unsaved changes when switching languages.
 - **个性化** / **Personalization** — 上百个系统图标 × 十种精选配色；浅色/深色模式；中/英文界面。
   100+ system icons, 10 curated colors, light/dark modes, Chinese/English UI.
 
