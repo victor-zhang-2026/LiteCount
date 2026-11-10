@@ -20,6 +20,8 @@ LiteCount is a native macOS countdown tool. Set a name and a target time, and it
   A blue hourglass ball lives at the screen edge with a total-count badge; hover to unfold the list.
 - **实时倒计时** / **Live countdown** — 每行展示图标 + 名称 + 目标时间 + 剩余天时分秒，每秒刷新；到期显示「已到期」，不出现负数。
   Each row shows icon, name, target time and the remaining time, refreshed every second. Expired items stop at "Expired", never negative.
+- **紧凑列表** / **Compact list** — 默认可见约五条事项，更多事项可滚动；倒计时颜色跟随事项图标。双击事项编辑，右键菜单可编辑或删除。
+  About five items fit by default, with scrolling for more. Countdown colors follow item icons. Double-click to edit, or use the context menu to edit or delete.
 - **自动管理** / **Automatic** — 创建即倒计时；按目标时间由近至远排序；重启后自动恢复并重新计算。
   Countdowns start on creation, sort near-to-far, and survive restarts.
 - **合并式时间选择** / **Combined picker** — 日历与时/分在同一浮层选择，选完即存；格式跟随应用语言。

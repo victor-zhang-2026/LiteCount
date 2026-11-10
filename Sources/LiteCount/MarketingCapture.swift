@@ -5,6 +5,7 @@ import SwiftUI
 /// Enabled with LITECOUNT_MARKETING_CAPTURE=1; writes PNGs to LITECOUNT_CAPTURE_DIR.
 @MainActor
 enum MarketingCapture {
+    private static var captureDelegate: CaptureDelegate?
     static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["LITECOUNT_MARKETING_CAPTURE"] == "1"
     }
@@ -12,7 +13,8 @@ enum MarketingCapture {
     static func run() {
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
-        app.delegate = CaptureDelegate()
+        captureDelegate = CaptureDelegate()
+        app.delegate = captureDelegate
         app.run()
     }
 }
@@ -25,6 +27,7 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
     private var editorWindow: NSWindow?
     private var pickerWindow: NSWindow?
     private var originalAppearance: String?
+    private var originalLanguage: String?
     private var steps: [(delay: TimeInterval, action: () -> Void)] = []
     private var stepIndex = 0
 
@@ -36,10 +39,13 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
 
         // Remember the pre-capture appearance so it can be restored exactly.
         originalAppearance = UserDefaults.standard.string(forKey: "appAppearance")
+        originalLanguage = UserDefaults.standard.string(forKey: "appLanguage")
+        let language = env["LITECOUNT_CAPTURE_LANGUAGE"] == "en" ? "en" : "zh"
+        UserDefaults.standard.set(language, forKey: "appLanguage")
 
         store = CountdownStore(fileURL: output.appendingPathComponent("isolated-data/items.json"))
         store.deleteAllForCapture()
-        seedItems()
+        seedItems(language: language)
 
         controller = FloatingWindowController(store: store, defaults: isolatedDefaults)
         controller.showTrigger()
@@ -69,6 +75,11 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     UserDefaults.standard.removeObject(forKey: "appAppearance")
                 }
+                if let original = self.originalLanguage {
+                    UserDefaults.standard.set(original, forKey: "appLanguage")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "appLanguage")
+                }
                 print("MARKETING_CAPTURE_DONE")
                 NSApplication.shared.terminate(nil)
             })
@@ -86,9 +97,9 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func seedItems() {
+    private func seedItems(language: String) {
         let now = Date.now
-        let items: [(String, TimeInterval, String, String)] = [
+        let chineseItems: [(String, TimeInterval, String, String)] = [
             ("产品发布会", 2 * 3600 + 1320, "rocket", "#FF3B30"),
             ("出差杭州", 3 * 86400 + 5040, "airplane", "#0A76E5"),
             ("版本上线", 9 * 86400 + 9000, "laptopcomputer", "#5E5CE6"),
@@ -98,6 +109,10 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
             ("旅行出发", 96 * 86400 + 36000, "umbrella", "#FF9500"),
             ("新年计划", 364 * 86400 + 43200, "flag.checkered", "#30B0C7")
         ]
+        let englishNames = ["Product launch", "Trip to Hangzhou", "New release", "Friend's birthday", "Anniversary", "Marathon", "Vacation", "New year goals"]
+        let items = language == "en"
+            ? zip(chineseItems, englishNames).map { (item, name) in (name, item.1, item.2, item.3) }
+            : chineseItems
         for (name, offset, icon, colorHex) in items {
             store.add(name: name, targetDate: now.addingTimeInterval(offset), icon: icon, colorHex: colorHex)
         }
@@ -105,7 +120,7 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
 
     private func openEditorWindow() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 470),
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 480),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false

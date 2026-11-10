@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-// Renders LiteCount v1.0.0 marketing cards from the real app screenshots.
+// Renders localized LiteCount marketing cards from real app screenshots.
 // Run from the project root:  swift scripts/render-cards.swift
 
 struct Spec {
@@ -14,7 +14,7 @@ struct Spec {
 }
 
 let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-let out = root.appendingPathComponent("marketing/v1.0.0")
+let out = root.appendingPathComponent("marketing/v1.0.2")
 let captures = root.appendingPathComponent("marketing/captures")
 
 let brandFooter = "LiteCount · macOS"
@@ -30,11 +30,11 @@ let specs: [Spec] = [
     Spec(name: "xiaohongshu/xhs-1.png", size: CGSize(width: 1080, height: 1440),
          title: "重要的日子，值得被看见", subtitle: "LiteCount · 轻量桌面倒计时", image: "panel-list", footer: brandFooter),
     Spec(name: "xiaohongshu/xhs-2.png", size: CGSize(width: 1080, height: 1440),
-         title: "剩余天·时·分·秒\n实时跳动", subtitle: "悬浮球悬停即展开，近到远自动排序", image: "panel-list", footer: brandFooter),
+         title: "天·时·分·秒\n实时可见", subtitle: "悬浮球悬停即展开，近到远自动排序", image: "panel-list", footer: brandFooter),
     Spec(name: "xiaohongshu/xhs-3.png", size: CGSize(width: 1080, height: 1440),
          title: "三步创建一个倒计时", subtitle: "名称 · 目标时间 · 图标颜色", image: "editor", footer: brandFooter),
     Spec(name: "xiaohongshu/xhs-4.png", size: CGSize(width: 1080, height: 1440),
-         title: "日期时间，一起选", subtitle: "日历与时分同屏，选完即存", image: "date-picker", footer: brandFooter),
+         title: "日期时间，一起选", subtitle: "日历与时分同屏，选完即可保存", image: "date-picker", footer: brandFooter),
     Spec(name: "xiaohongshu/xhs-5.png", size: CGSize(width: 1080, height: 1440),
          title: "图标和颜色\n由你定义", subtitle: "上百个系统图标 × 十种精选配色", image: "editor", footer: brandFooter),
     Spec(name: "xiaohongshu/xhs-6.png", size: CGSize(width: 1080, height: 1440),
@@ -70,17 +70,54 @@ let appBlue = NSColor(calibratedRed: 9 / 255, green: 118 / 255, blue: 229 / 255,
 struct CardView: View {
     let spec: Spec
 
-    private var pad: CGFloat { spec.size.height > 1000 ? 72 : (spec.size.height < 300 ? 20 : 44) }
-    private var imageHeight: CGFloat {
-        spec.size.height > 1000 ? spec.size.height * 0.58
-            : (spec.size.height < 300 ? spec.size.height - 2 * pad : spec.size.height * 0.52)
+    private var compact: Bool { spec.size.height < 300 }
+    private var portrait: Bool { spec.size.height > 1000 }
+    private var pad: CGFloat { portrait ? 70 : (compact ? 18 : 46) }
+    private var titleSize: CGFloat { portrait ? 72 : (compact ? 30 : 43) }
+    private var subtitleSize: CGFloat { portrait ? 32 : (compact ? 16 : 21) }
+
+    private var copy: some View {
+        VStack(alignment: .leading, spacing: portrait ? 22 : 14) {
+            if !spec.title.isEmpty {
+                Text(spec.title)
+                    .font(.system(size: titleSize, weight: .bold))
+                    .foregroundStyle(Color(red: 0.04, green: 0.23, blue: 0.47))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if !spec.subtitle.isEmpty {
+                Text(spec.subtitle)
+                    .font(.system(size: subtitleSize, weight: .medium))
+                    .foregroundStyle(Color(red: 0.25, green: 0.36, blue: 0.5))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            if !spec.footer.isEmpty {
+                Text(spec.footer)
+                    .font(.system(size: portrait ? 25 : 17, weight: .semibold))
+                    .foregroundStyle(Color(nsColor: appBlue))
+            }
+        }
+    }
+
+    private func screenshot(width: CGFloat, height: CGFloat) -> some View {
+        Group {
+            if let name = spec.image, let shot = loadShot(name, for: spec) {
+                Image(nsImage: shot)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: width - 20, height: height - 20)
+                    .frame(width: width, height: height)
+                    .background(.white.opacity(0.86), in: RoundedRectangle(cornerRadius: portrait ? 28 : 20))
+                    .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+            }
+        }
     }
 
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(nsColor: NSColor(calibratedRed: 0.92, green: 0.95, blue: 1.0, alpha: 1)),
-                         Color(nsColor: NSColor(calibratedRed: 0.97, green: 0.98, blue: 1.0, alpha: 1))],
+                colors: [Color(red: 0.92, green: 0.95, blue: 1), Color(red: 0.97, green: 0.98, blue: 1)],
                 startPoint: .top, endPoint: .bottom
             )
             Circle()
@@ -92,58 +129,37 @@ struct CardView: View {
                 .frame(width: spec.size.height * 0.7)
                 .offset(x: -spec.size.width * 0.45, y: spec.size.height * 0.4)
 
-            VStack(alignment: .leading, spacing: 0) {
-                if !spec.title.isEmpty {
-                    Text(spec.title)
-                        .font(.system(size: spec.size.height > 1000 ? 72 : 44, weight: .bold))
-                        .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.04, green: 0.23, blue: 0.47, alpha: 1)))
-                        .lineSpacing(6)
+            if compact {
+                screenshot(width: spec.size.width - 2 * pad, height: spec.size.height - 2 * pad).padding(pad)
+            } else if portrait {
+                VStack(alignment: .leading, spacing: 35) {
+                    copy.frame(width: spec.size.width - 2 * pad, height: 390, alignment: .leading)
+                    screenshot(width: spec.size.width - 2 * pad,
+                               height: spec.size.height - 2 * pad - 390 - 35)
                 }
-                if !spec.subtitle.isEmpty {
-                    Text(spec.subtitle)
-                        .font(.system(size: spec.size.height > 1000 ? 34 : 22, weight: .medium))
-                        .foregroundStyle(Color(nsColor: NSColor(calibratedRed: 0.25, green: 0.36, blue: 0.5, alpha: 1)))
-                        .padding(.top, spec.size.height > 1000 ? 18 : 10)
+                .frame(width: spec.size.width - 2 * pad)
+                .padding(pad)
+            } else {
+                HStack(spacing: 30) {
+                    copy.frame(maxWidth: .infinity, alignment: .leading)
+                    screenshot(width: spec.size.width * 0.42, height: spec.size.height - 2 * pad)
                 }
-                if let name = spec.image, let image = loadShot(name) {
-                    ScreenshotView(image: image)
-                        .frame(width: spec.size.width - 2 * pad, height: imageHeight, alignment: .top)
-                        .clipShape(RoundedRectangle(cornerRadius: spec.size.height > 1000 ? 28 : 18, style: .continuous))
-                        .shadow(color: .black.opacity(0.18), radius: 24, y: 10)
-                        .padding(.top, spec.size.height > 1000 ? 40 : 20)
-                }
-                if !spec.footer.isEmpty {
-                    Text(spec.footer)
-                        .font(.system(size: spec.size.height > 1000 ? 26 : 16, weight: .semibold))
-                        .foregroundStyle(Color(nsColor: appBlue))
-                        .padding(.top, spec.size.height > 1000 ? 28 : 16)
-                }
+                .padding(pad)
             }
-            .padding(pad)
         }
         .frame(width: spec.size.width, height: spec.size.height)
         .clipped()
     }
 }
 
-func loadShot(_ name: String) -> NSImage? {
-    let url = captures.appendingPathComponent("\(name).png")
+func loadShot(_ name: String, for spec: Spec) -> NSImage? {
+    let language = spec.name.hasPrefix("x/") || spec.name.hasPrefix("linkedin/") ? "en" : "zh"
+    let url = captures.appendingPathComponent("\(language)/\(name).png")
     guard let image = NSImage(contentsOf: url) else {
         print("MISSING screenshot: \(url.path)")
         return nil
     }
     return image
-}
-
-struct ScreenshotView: View {
-    let image: NSImage
-
-    var body: some View {
-        Image(nsImage: image)
-            .resizable()
-            .interpolation(.high)
-            .aspectRatio(contentMode: .fill)
-    }
 }
 
 func render(_ spec: Spec) throws {

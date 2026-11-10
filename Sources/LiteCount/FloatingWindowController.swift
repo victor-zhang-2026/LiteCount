@@ -29,7 +29,10 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
 
     // The visible ball remains 42 pt; the extra transparent space prevents its circular shadow from clipping.
     private let triggerSize = NSSize(width: 48, height: 48)
-    private let panelSize = NSSize(width: 360, height: 480)
+    private var isEditorVisible = false
+    private var panelSize: NSSize {
+        NSSize(width: 360, height: isEditorVisible ? 480 : 352)
+    }
     private let triggerScreenMargin: CGFloat = 8
     private let panelScreenMargin: CGFloat = 12
     private let panelTransitionDuration: TimeInterval = 0.12
@@ -80,6 +83,13 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         guard isOpen else { return }
         isPinned = true
         cancelClose()
+    }
+
+    func setEditorVisible(_ visible: Bool) {
+        guard isEditorVisible != visible else { return }
+        let currentTop = listPanel.frame.maxY
+        isEditorVisible = visible
+        if isOpen { positionListPanel(preferredTopY: currentTop) }
     }
 
     @discardableResult
@@ -317,7 +327,7 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         closeWorkItem = nil
     }
 
-    private func positionListPanel() {
+    private func positionListPanel(preferredTopY: CGFloat? = nil) {
         guard let screen = screenContainingTrigger() ?? NSScreen.main else { return }
         let visible = screen.visibleFrame
         let trigger = triggerPanel.frame
@@ -330,7 +340,8 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
             max(proposedX, visible.minX + panelScreenMargin),
             visible.maxX - panelSize.width - panelScreenMargin
         )
-        let centeredY = trigger.midY - panelSize.height / 2
+        let centeredY = preferredTopY.map { $0 - panelSize.height }
+            ?? trigger.midY - panelSize.height / 2
         let y = min(
             max(centeredY, visible.minY + panelScreenMargin),
             visible.maxY - panelSize.height - panelScreenMargin

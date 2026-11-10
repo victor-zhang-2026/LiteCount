@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>BuildNumber</key>
-	<integer>4</integer>
+	<integer>7</integer>
 	<key>MarketingVersion</key>
-	<string>1.0.2</string>
+	<string>1.0.3</string>
 	<key>ReleaseChannel</key>
 	<string>stable</string>
 </dict>

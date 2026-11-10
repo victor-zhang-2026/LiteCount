@@ -71,6 +71,7 @@ struct CountdownListView: View {
     private func closeEditor() {
         showingEditor = false
         editingItem = nil
+        controller.setEditorVisible(false)
     }
 
     private var deletionConfirmation: some View {
@@ -121,6 +122,7 @@ struct CountdownListView: View {
         // The editor beneath the overlay referenced the deleted item.
         showingEditor = false
         editingItem = nil
+        controller.setEditorVisible(false)
     }
 
     private var header: some View {
@@ -144,6 +146,7 @@ struct CountdownListView: View {
             Button {
                 editingItem = nil
                 showingEditor = true
+                controller.setEditorVisible(true)
                 controller.pinPanel()
             } label: {
                 Image(systemName: "plus")
@@ -234,6 +237,7 @@ struct CountdownListView: View {
                             onEdit: {
                                 editingItem = item
                                 showingEditor = true
+                                controller.setEditorVisible(true)
                                 controller.pinPanel()
                             },
                             onDelete: {
@@ -273,40 +277,9 @@ private struct CountdownRow: View {
                     .foregroundStyle(Color.liteCountSecondaryText)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .onTapGesture { onEdit() }
 
-            if let remaining {
-                Text(remaining)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(Color.primary)
-            } else {
-                Text(L10n.expired)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.liteCountSecondaryText)
-            }
-
-            HStack(spacing: 4) {
-                Button(action: onEdit) {
-                    RowActionIcon(systemName: "pencil", weight: .medium, hoverColor: .liteCountBlue)
-                }
-                .buttonStyle(.plain)
-                .opacity(hovering ? 1 : 0)
-                .allowsHitTesting(hovering)
-                .accessibilityHidden(!hovering)
-                .help(L10n.edit)
-
-                Button(action: onDelete) {
-                    RowActionIcon(systemName: "trash", weight: .medium, hoverColor: .red)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.red.opacity(0.78))
-                .opacity(hovering ? 1 : 0)
-                .allowsHitTesting(hovering)
-                .accessibilityHidden(!hovering)
-                .help(L10n.delete)
-            }
+            countdownBadge
+                .padding(.leading, 6)
         }
         .frame(minHeight: 40, alignment: .center)
         .padding(.horizontal, 10)
@@ -318,11 +291,31 @@ private struct CountdownRow: View {
                 .frame(height: 0.5)
         }
         .contentShape(Rectangle())
+        .onTapGesture(count: 2, perform: onEdit)
         .onHover { hovering = $0 }
         .contextMenu {
             Button(L10n.edit, action: onEdit)
             Button(L10n.delete, role: .destructive, action: onDelete)
         }
+    }
+
+    private var countdownBadge: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "hourglass")
+                .font(.system(size: 10, weight: .semibold))
+            Text(remaining ?? L10n.expired)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .foregroundStyle(remaining == nil ? Color.liteCountSecondaryText : IconPalette.color(item.colorHex))
+        .padding(.horizontal, 8)
+        .frame(height: 28)
+        .background(
+            remaining == nil ? Color.liteCountSeparator.opacity(0.24) : IconPalette.color(item.colorHex).opacity(0.12),
+            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+        )
     }
 }
 
@@ -352,6 +345,7 @@ struct CountdownEditor: View {
     @State private var date: Date
     @State private var icon: String
     @State private var colorHex: String
+    @State private var iconSelectionReadyAt = Date.distantPast
 
     init(controller: FloatingWindowController, editing: CountdownItem?, onSave: @escaping (String, Date, String, String) -> Void, onDelete: @escaping () -> Void, onCancel: @escaping () -> Void) {
         self.controller = controller
@@ -421,6 +415,7 @@ struct CountdownEditor: View {
                     .padding(.top, 6)
                     .padding(.bottom, 4)
             }
+            .onAppear { iconSelectionReadyAt = Date.now.addingTimeInterval(0.45) }
 
             HStack(spacing: 8) {
                 if editing != nil {
@@ -539,7 +534,7 @@ struct CountdownEditor: View {
 
     private var iconGrid: some View {
         // Eager Grid (not LazyVGrid) so all symbols render reliably, including offscreen capture.
-        Grid(alignment: .center, horizontalSpacing: 6, verticalSpacing: 6) {
+        Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 6) {
             ForEach(iconRows, id: \.self) { row in
                 GridRow {
                     ForEach(row, id: \.self) { symbol in
@@ -548,7 +543,7 @@ struct CountdownEditor: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var iconRows: [[String]] {
@@ -560,13 +555,14 @@ struct CountdownEditor: View {
     private func iconCell(_ symbol: String) -> some View {
         let selected = symbol == icon
         return Button {
+            guard Date.now >= iconSelectionReadyAt else { return }
             controller.pinPanel()
             icon = symbol
         } label: {
             Image(systemName: symbol)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(selected ? .white : Color.liteCountSecondaryText)
-                .frame(width: 30, height: 30)
+                .frame(width: 42, height: 42)
                 .background(
                     selected ? colorHex.color : Color.liteCountSeparator.opacity(0.22),
                     in: RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -620,26 +616,6 @@ private struct MarqueeContentWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
-    }
-}
-
-private struct RowActionIcon: View {
-    let systemName: String
-    let weight: Font.Weight
-    let hoverColor: Color
-    @State private var hovering = false
-
-    var body: some View {
-        Image(systemName: systemName)
-            .symbolRenderingMode(.monochrome)
-            .font(.system(size: 13, weight: weight))
-            .frame(width: 24, height: 24)
-            .background(
-                hoverColor.opacity(hovering ? 0.12 : 0),
-                in: RoundedRectangle(cornerRadius: 5, style: .continuous)
-            )
-            .contentShape(Rectangle())
-            .onHover { hovering = $0 }
     }
 }
 
