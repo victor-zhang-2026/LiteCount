@@ -16,6 +16,7 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
     var listPanel: FloatingPanel!
     private var openWorkItem: DispatchWorkItem?
     private var closeWorkItem: DispatchWorkItem?
+    private var expiryWorkItem: DispatchWorkItem?
     private var isTriggerHovered = false
     private var isListHovered = false
     private var isPinned = false
@@ -35,6 +36,7 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
     }
     private let triggerScreenMargin: CGFloat = 8
     private let panelScreenMargin: CGFloat = 12
+    private let triggerPanelGap: CGFloat = 8
     private let panelTransitionDuration: TimeInterval = 0.12
     // Some conferencing speaker overlays sit above the screen-saver level. Use the
     // system's high assistive-overlay level without entering cursor-reserved levels.
@@ -51,15 +53,16 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         defaults.removeObject(forKey: "panelLocked")
         configurePanels()
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
-        store.onCountChanged = { [weak self] count in
-            self?.updateTriggerCount(count)
+        store.onCountChanged = { [weak self] _ in
+            self?.refreshTriggerCount()
         }
+        refreshTriggerCount()
     }
 
     func showTrigger() {
         floatingPlacement.restore(triggerPanel, fallback: savedTriggerOrigin())
         triggerPanel.orderFrontRegardless()
-        updateTriggerCount(store.items.count)
+        refreshTriggerCount()
     }
 
     func togglePanel() {
@@ -219,7 +222,7 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         triggerPanel.becomesKeyOnlyIfNeeded = true
         triggerPanel.hasShadow = false
         let triggerView = FloatingBallView(controller: self)
-        triggerView.totalCount = store.items.count
+        triggerView.totalCount = store.upcomingCount(at: .now)
         triggerView.wantsLayer = true
         triggerView.layer?.backgroundColor = NSColor.clear.cgColor
         triggerView.layer?.isOpaque = false
@@ -292,7 +295,7 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         NotificationCenter.default.post(name: .liteCountPanelWillClose, object: nil)
         listPanel.makeFirstResponder(nil)
         isOpen = false
-        updateTriggerCount(store.items.count)
+        refreshTriggerCount()
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = panelTransitionDuration
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
@@ -310,6 +313,16 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         guard let triggerView = triggerPanel.contentView as? FloatingBallView else { return }
         triggerView.totalCount = count
         triggerView.displayIfNeeded()
+    }
+
+    private func refreshTriggerCount() {
+        expiryWorkItem?.cancel()
+        let now = Date.now
+        updateTriggerCount(store.upcomingCount(at: now))
+        guard let nextExpiry = store.upcoming(at: now).first?.targetDate else { return }
+        let work = DispatchWorkItem { [weak self] in self?.refreshTriggerCount() }
+        expiryWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, nextExpiry.timeIntervalSince(now)), execute: work)
     }
 
     private func scheduleClose() {
@@ -333,9 +346,18 @@ final class FloatingWindowController: NSObject, NSWindowDelegate {
         let trigger = triggerPanel.frame
         let spaceOnLeft = trigger.minX - visible.minX - panelScreenMargin
         let spaceOnRight = visible.maxX - trigger.maxX - panelScreenMargin
-        let proposedX = spaceOnLeft >= panelSize.width || spaceOnLeft >= spaceOnRight
-            ? trigger.minX - panelSize.width
-            : trigger.maxX
+        let leftX = trigger.minX - panelSize.width - triggerPanelGap
+        let rightX = trigger.maxX + triggerPanelGap
+        let leftFits = leftX >= visible.minX + panelScreenMargin
+        let rightFits = rightX + panelSize.width <= visible.maxX - panelScreenMargin
+        let proposedX: CGFloat
+        if leftFits && (!rightFits || spaceOnLeft >= spaceOnRight) {
+            proposedX = leftX
+        } else if rightFits {
+            proposedX = rightX
+        } else {
+            proposedX = leftX
+        }
         let x = min(
             max(proposedX, visible.minX + panelScreenMargin),
             visible.maxX - panelSize.width - panelScreenMargin

@@ -6,6 +6,7 @@ struct CountdownListView: View {
     let controller: FloatingWindowController
 
     @State private var showingEditor = false
+    @State private var showingExpired = false
     @State private var editingItem: CountdownItem?
     @State private var deleteCandidate: CountdownItem?
     @State private var languageVersion = UUID()
@@ -46,7 +47,9 @@ struct CountdownListView: View {
                     )
                     .transition(.opacity)
                 } else {
-                    listContent
+                    TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                        listContent(at: timeline.date)
+                    }
                 }
             }
             .id(languageVersion)
@@ -58,6 +61,7 @@ struct CountdownListView: View {
                 deletionConfirmation
             }
         }
+        .frame(width: 360)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .preferredColorScheme(appearanceMode.colorScheme)
         .onHover(perform: controller.listHoverChanged)
@@ -126,34 +130,44 @@ struct CountdownListView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
-            Button {
-                controller.showAbout()
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.liteCountBlue)
-                    Image(systemName: "hourglass").font(.system(size: 13, weight: .heavy)).foregroundStyle(.white)
+        HStack(spacing: 7) {
+            if showingExpired && !showingEditor {
+                Button { showingExpired = false } label: {
+                    Image(systemName: "chevron.left")
                 }
-                .frame(width: 28, height: 28)
+                .buttonStyle(HeaderButtonStyle())
+                .fastHelp(L10n.back, horizontalOffset: 32)
+            } else {
+                Button {
+                    controller.showAbout()
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.liteCountBlue)
+                        Image(systemName: "hourglass").font(.system(size: 13, weight: .heavy)).foregroundStyle(.white)
+                    }
+                    .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .fastHelp(L10n.about)
             }
-            .buttonStyle(.plain)
-            .fastHelp(L10n.about)
-            Text(L10n.appName)
+            Text(showingExpired && !showingEditor ? L10n.expired : L10n.appName)
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
             Spacer()
-            Button {
-                editingItem = nil
-                showingEditor = true
-                controller.setEditorVisible(true)
-                controller.pinPanel()
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
+            if !showingExpired && !showingEditor {
+                Button {
+                    editingItem = nil
+                    showingEditor = true
+                    controller.setEditorVisible(true)
+                    controller.pinPanel()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .buttonStyle(HeaderButtonStyle(hoverColor: .liteCountBlue))
+                .fastHelp(L10n.add)
             }
-            .buttonStyle(HeaderButtonStyle(hoverColor: .liteCountBlue))
-            .fastHelp(L10n.add)
 
             Button {
                 L10n.toggleLanguage()
@@ -179,6 +193,15 @@ struct CountdownListView: View {
             .buttonStyle(HeaderButtonStyle())
             .fastHelp(appearanceMode == .light ? L10n.switchToDark : L10n.switchToLight)
 
+            if !showingExpired && !showingEditor {
+                Button { showingExpired = true } label: {
+                    Image(systemName: "clock")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .buttonStyle(HeaderButtonStyle())
+                .fastHelp(L10n.expired)
+            }
+
             Button {
                 controller.togglePanelLock()
                 panelLockVersion = UUID()
@@ -199,15 +222,16 @@ struct CountdownListView: View {
             .buttonStyle(HeaderButtonStyle(hoverColor: .red))
             .fastHelp(L10n.closePanel, horizontalOffset: -32)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .frame(height: 48)
         .zIndex(10)
     }
 
-    private var listContent: some View {
-        VStack(spacing: 0) {
-            if store.items.isEmpty { emptyState }
-            else { countdownScroll }
+    private func listContent(at now: Date) -> some View {
+        let items = showingExpired ? store.expired(at: now) : store.upcoming(at: now)
+        return VStack(spacing: 0) {
+            if items.isEmpty { emptyState }
+            else { countdownScroll(items: items, now: now) }
         }
     }
 
@@ -217,39 +241,39 @@ struct CountdownListView: View {
             Image(systemName: "hourglass")
                 .font(.system(size: 24, weight: .light))
                 .foregroundStyle(Color.liteCountSecondaryText)
-            Text(L10n.emptyTitle)
+            Text(showingExpired ? L10n.noExpired : store.items.isEmpty ? L10n.emptyTitle : L10n.noUpcoming)
                 .font(.system(size: 13, weight: .medium))
-            Text(L10n.emptyHint)
-                .font(.system(size: 11))
-                .foregroundStyle(Color.liteCountSecondaryText)
+            if !showingExpired && store.items.isEmpty {
+                Text(L10n.emptyHint)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.liteCountSecondaryText)
+            }
             Spacer()
         }
     }
 
-    private var countdownScroll: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(store.sorted) { item in
-                        CountdownRow(
-                            item: item,
-                            now: timeline.date,
-                            onEdit: {
-                                editingItem = item
-                                showingEditor = true
-                                controller.setEditorVisible(true)
-                                controller.pinPanel()
-                            },
-                            onDelete: {
-                                controller.setConfirmationActive(true)
-                                deleteCandidate = item
-                            }
-                        )
-                    }
+    private func countdownScroll(items: [CountdownItem], now: Date) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(items) { item in
+                    CountdownRow(
+                        item: item,
+                        now: now,
+                        onEdit: {
+                            editingItem = item
+                            showingEditor = true
+                            controller.setEditorVisible(true)
+                            controller.pinPanel()
+                        },
+                        onDelete: {
+                            controller.setConfirmationActive(true)
+                            deleteCandidate = item
+                        }
+                    )
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
         }
     }
 }

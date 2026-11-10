@@ -16,9 +16,16 @@ final class CountdownStore {
         load()
     }
 
-    /// Near-to-far by target date. Expired items (past dates) come first.
-    var sorted: [CountdownItem] {
-        items.sorted { $0.targetDate < $1.targetDate }
+    func upcoming(at now: Date) -> [CountdownItem] {
+        items.filter { $0.targetDate > now }.sorted { $0.targetDate < $1.targetDate }
+    }
+
+    func expired(at now: Date) -> [CountdownItem] {
+        items.filter { $0.targetDate <= now }.sorted { $0.targetDate > $1.targetDate }
+    }
+
+    func upcomingCount(at now: Date) -> Int {
+        items.count { $0.targetDate > now }
     }
 
     func add(name rawName: String, targetDate: Date, icon rawIcon: String, colorHex rawColorHex: String) {

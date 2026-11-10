@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4 — 2026-11-10
+
+- 到期事项自动移入右上角「已过期」，主列表与悬浮球角标只计进行中事项；过期事项保留原有编辑、删除操作。
+- 修正新增入口后的顶部布局和面板定位，避免列表面板遮挡悬浮球。
+- Expired items move automatically to the Expired view. The main list and floating-ball badge show upcoming items only; expired items remain editable and deletable.
+- Adjusted header layout and panel placement so the list no longer covers the floating ball.
+
 ## 1.0.3 — 2026-11-10
 
 - 列表面板缩至约五条事项的高度，更多事项可滚动；编辑器仍保留完整高度。

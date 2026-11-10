@@ -47,7 +47,10 @@ enum L10n {
     static var minuteColumn: String { text("分", "Min") }
     static var emptyTitle: String { text("还没有倒计时事项", "No countdown items yet") }
     static var emptyHint: String { text("添加第一个重要时刻吧", "Add your first important moment") }
-    static var expired: String { text("已到期", "Expired") }
+    static var noUpcoming: String { text("暂无进行中的事项", "No upcoming items") }
+    static var noExpired: String { text("暂无已过期事项", "No expired items") }
+    static var expired: String { text("已过期", "Expired") }
+    static var back: String { text("返回", "Back") }
     static var dayUnit: String { text("天", "d") }
     static var switchToEnglish: String { text("Switch to English", "切换到中文") }
 }
