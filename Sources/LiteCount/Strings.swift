@@ -37,7 +37,6 @@ enum L10n {
     static var pinPanel: String { text("固定浮窗", "Pin Panel") }
     static var unpinPanel: String { text("取消固定", "Unpin Panel") }
     static var namePlaceholder: String { text("事项名称…", "Item name…") }
-    static var targetTime: String { text("目标时间", "Target") }
     static var chooseIcon: String { text("选择图标", "Choose Icon") }
     static var chooseColor: String { text("选择颜色", "Choose Color") }
     static var pastHint: String { text("目标时间需晚于现在", "Target must be in the future") }

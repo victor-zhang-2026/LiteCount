@@ -9,7 +9,13 @@ enum AppFormat {
     }
 
     static func dateTimeText(_ date: Date) -> String {
-        date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale()))
+        if !L10n.isChinese {
+            let formatter = DateFormatter()
+            formatter.locale = locale()
+            formatter.dateFormat = "MMM d, yyyy HH:mm"
+            return formatter.string(from: date)
+        }
+        return date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale()))
     }
 
     static func dateText(_ date: Date) -> String {
@@ -17,7 +23,13 @@ enum AppFormat {
     }
 
     static func timeText(_ date: Date) -> String {
-        date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(locale()))
+        if !L10n.isChinese {
+            let formatter = DateFormatter()
+            formatter.locale = locale()
+            formatter.dateFormat = "HH:mm"
+            return formatter.string(from: date)
+        }
+        return date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(locale()))
     }
 }
 

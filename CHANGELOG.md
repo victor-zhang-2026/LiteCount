@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6 — 2026-11-10
+
+- 新增与编辑界面移除“目标时间 / Target”标签，日期时间选择框与名称框对齐。
+- 英文日期时间改为 24 小时制显示，与选择器一致，不再显示 AM/PM。
+- Removed the Target label from new and edit views so the date field aligns with the name field.
+- English date and time now use a 24-hour display, matching the picker without AM/PM.
+
 ## 1.0.5 — 2026-11-10
 
 - 新增与编辑面板统一为列表的 360×352 尺寸；名称框左侧可选择图标和颜色，日期时间下方直接显示实时倒计时。

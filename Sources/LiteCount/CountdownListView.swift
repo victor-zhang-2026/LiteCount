@@ -390,18 +390,13 @@ struct CountdownEditor: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 12)
 
-            HStack(spacing: 10) {
-                Text(L10n.targetTime)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.liteCountSecondaryText)
-                PopoverField(popoverSize: NSSize(width: 252, height: 444)) {
-                    pickerField(AppFormat.dateTimeText(date), symbol: "calendar")
-                } popoverContent: {
-                    DateTimePickerPopoverView(date: $date)
-                }
+            PopoverField(popoverSize: NSSize(width: 252, height: 444)) {
+                pickerField(AppFormat.dateTimeText(date), symbol: "calendar")
+            } popoverContent: {
+                DateTimePickerPopoverView(date: $date)
             }
             .frame(height: 36)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .padding(.top, 10)
 
             if isPast {
