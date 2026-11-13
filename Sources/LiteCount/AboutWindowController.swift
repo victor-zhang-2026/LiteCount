@@ -40,14 +40,10 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
 private struct AboutView: View {
     var body: some View {
         VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.liteCountBlue)
-                    .frame(width: 84, height: 84)
-                Image(systemName: "hourglass")
-                    .font(.system(size: 34, weight: .medium))
-                    .foregroundStyle(.white)
-            }
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 84, height: 84)
 
             Text(ProductIdentity.englishName)
                 .font(.system(size: 22, weight: .semibold))

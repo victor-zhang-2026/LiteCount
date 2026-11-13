@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.8 — 2026-11-13
+
+- 浮窗左上角改用 LiteCount 自绘沙漏，与悬浮球及应用图标一致。
+- 「关于 LiteCount」窗口直接显示应用图标。
+- Replaced the floating panel's header symbol with the LiteCount hourglass artwork.
+- The About window now displays the application icon.
+
+
 ## 1.0.7 — 2026-11-13
 
 - 新增每个事项一次的到期前系统通知；创建或编辑时可输入提前天、时、分，留空或全零不提醒。

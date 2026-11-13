@@ -142,7 +142,9 @@ struct CountdownListView: View {
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.liteCountBlue)
-                        Image(systemName: "hourglass").font(.system(size: 13, weight: .heavy)).foregroundStyle(.white)
+                        LiteCountHeaderHourglass()
+                            .stroke(.white, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                            .frame(width: 28, height: 28)
                     }
                     .frame(width: 28, height: 28)
                 }
@@ -763,6 +765,31 @@ private struct MarqueeContentWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+private struct LiteCountHeaderHourglass: Shape {
+    func path(in rect: CGRect) -> Path {
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + rect.width * x, y: rect.minY + rect.height * y)
+        }
+
+        var path = Path()
+        path.move(to: point(0.33, 0.70))
+        path.addLine(to: point(0.67, 0.70))
+        path.move(to: point(0.33, 0.30))
+        path.addLine(to: point(0.67, 0.30))
+        path.move(to: point(0.37, 0.68))
+        path.addLine(to: point(0.37, 0.61))
+        path.addLine(to: point(0.50, 0.50))
+        path.addLine(to: point(0.63, 0.61))
+        path.addLine(to: point(0.63, 0.68))
+        path.move(to: point(0.37, 0.32))
+        path.addLine(to: point(0.37, 0.39))
+        path.addLine(to: point(0.50, 0.50))
+        path.addLine(to: point(0.63, 0.39))
+        path.addLine(to: point(0.63, 0.32))
+        return path
     }
 }
 
