@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.7 — 2026-11-13
+
+- 新增每个事项一次的到期前系统通知；创建或编辑时可输入提前天、时、分，留空或全零不提醒。
+- 修改或删除事项时更新或取消待触发通知；重启后继续管理提醒。仅在设置提醒时请求系统通知权限。
+- 提醒输入行与现有编辑器对齐，修正新增提醒行后顶部控件上移。
+- Added one macOS reminder per item, with editable days, hours, and minutes before the target; empty or all-zero fields disable it.
+- Editing or deleting an item updates or cancels its pending reminder. Reminders persist across restarts, and notification permission is requested only when setting one.
+- Aligned the reminder row with the editor and corrected the header shift caused by the added field.
+
+
 ## 1.0.6 — 2026-11-10
 
 - 新增与编辑界面移除“目标时间 / Target”标签，日期时间选择框与名称框对齐。

@@ -1,8 +1,8 @@
 # 数据与隐私 / Data and privacy
 
-LiteCount 无账号、服务器、联网业务、遥测、分析和广告。应用不申请通知、联系人、日历、辅助功能等任何权限。
+LiteCount 无账号、服务器、联网业务、遥测、分析和广告。只有在用户为事项设置到期前提醒时，应用才请求 macOS 通知权限；不申请联系人、日历、辅助功能等权限。
 
-LiteCount has no accounts, server, networking, telemetry, analytics, or advertising. The app requests no permissions — no notifications, contacts, calendar, or accessibility.
+LiteCount has no accounts, server, networking, telemetry, analytics, or advertising. It requests macOS notification permission only when you set a reminder; it does not request contacts, calendar, or accessibility access.
 
 ## 存储位置 / Storage
 
@@ -10,8 +10,8 @@ LiteCount has no accounts, server, networking, telemetry, analytics, or advertis
   Items and settings: `~/Library/Application Support/LiteCount/items.json` (unencrypted JSON) with an automatic `items.backup.json`.
 - 悬浮球位置等偏好：本机 `UserDefaults`。
   Ball position and preferences: local UserDefaults.
-- 除上述本机文件外，LiteCount 不写入或读取任何其他位置，不访问摄像头、麦克风或屏幕内容。
-  LiteCount touches nothing beyond those local files and never accesses camera, microphone, or screen content.
+- 提醒由 macOS 本地通知中心安排，不发送至服务器；应用不访问摄像头、麦克风或屏幕内容。
+  Reminders are scheduled through macOS local notifications, with no server delivery. The app does not access the camera, microphone, or screen content.
 
 ## 边界说明 / Limits
 

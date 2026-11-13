@@ -40,6 +40,24 @@ enum L10n {
     static var chooseIcon: String { text("选择图标", "Choose Icon") }
     static var chooseColor: String { text("选择颜色", "Choose Color") }
     static var pastHint: String { text("目标时间需晚于现在", "Target must be in the future") }
+    static var reminderLabel: String { text("到期前", "Before due") }
+    static var reminderDayUnit: String { text("天", "d") }
+    static var reminderHourUnit: String { text("时", "h") }
+    static var reminderMinuteUnit: String { text("分", "m") }
+    static var reminderTimeHint: String { text("提醒时间需晚于现在、早于目标时间", "Reminder must be after now and before the target") }
+    static var reminderRangeHint: String { text("小时需小于24，分钟需小于60", "Hours must be below 24 and minutes below 60") }
+    static func reminderBody(_ lead: TimeInterval) -> String {
+        let minutes = Int(lead) / 60
+        let days = minutes / 1_440
+        let hours = minutes % 1_440 / 60
+        let remainingMinutes = minutes % 60
+        let parts: [String] = [
+            days > 0 ? text("\(days)天", "\(days)d") : "",
+            hours > 0 ? text("\(hours)小时", "\(hours)h") : "",
+            remainingMinutes > 0 ? text("\(remainingMinutes)分钟", "\(remainingMinutes)m") : ""
+        ].filter { !$0.isEmpty }
+        return text("距离到期还有 \(parts.joined())", "Due in \(parts.joined(separator: " "))")
+    }
     static var chooseTime: String { text("选择时间", "Choose Time") }
     static var done: String { text("完成", "Done") }
     static var hourColumn: String { text("时", "Hour") }

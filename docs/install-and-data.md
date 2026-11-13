@@ -15,10 +15,12 @@
    shasum -a 256 -c SHA256SUMS
    ```
 
-3. 解压并将 `LiteCount.app` 移动到「应用程序」。
-   Unzip and move LiteCount.app to /Applications.
+3. 解压 `LiteCount.app`。
+   Unzip `LiteCount.app`.
 4. 首次启动：安装包为 ad-hoc 签名、未经 Apple 公证。首次打开请在 Finder 中右键点击 App →「打开」；之后可正常双击启动。
    First launch: the bundle is ad-hoc signed and not notarized. Right-click the app and choose Open the first time.
+5. 首次设置到期前提醒时，应用会请求系统通知权限，请选择允许。若此前拒绝，请前往「系统设置 → 通知 → LiteCount」，开启「允许通知」。[Apple 通知设置说明](https://support.apple.com/guide/mac-help/change-notifications-settings-mchl205da693/mac)。
+   The first time you set a reminder, allow LiteCount to send notifications. If you previously denied permission, enable Allow Notifications in System Settings → Notifications → LiteCount. [Apple's notification settings guide](https://support.apple.com/guide/mac-help/change-notifications-settings-mchl205da693/mac).
 
 ## 数据存储 / Data
 
@@ -41,3 +43,4 @@
 - 未做 Apple 公证（notarization）；Gatekeeper 首次打开需右键 → 打开。
 - 数据无云同步；换机需手动迁移上述 JSON 文件。
 - 到期事项保留在列表中显示「已到期」，不会自动删除。
+- 提醒由 macOS 本地通知处理；系统专注模式和通知设置可能影响展示。

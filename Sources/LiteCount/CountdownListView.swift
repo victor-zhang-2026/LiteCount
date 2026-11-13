@@ -29,11 +29,11 @@ struct CountdownListView: View {
                     CountdownEditor(
                         controller: controller,
                         editing: editingItem,
-                        onSave: { name, date, icon, colorHex in
+                        onSave: { name, date, icon, colorHex, reminderLead in
                             if let editingItem {
-                                store.update(id: editingItem.id, name: name, targetDate: date, icon: icon, colorHex: colorHex)
+                                store.update(id: editingItem.id, name: name, targetDate: date, icon: icon, colorHex: colorHex, reminderLead: reminderLead)
                             } else {
-                                store.add(name: name, targetDate: date, icon: icon, colorHex: colorHex)
+                                store.add(name: name, targetDate: date, icon: icon, colorHex: colorHex, reminderLead: reminderLead)
                             }
                             closeEditor()
                         },
@@ -52,6 +52,7 @@ struct CountdownListView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .environment(\.locale, languageLocale)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -355,9 +356,11 @@ private func remainingText(until target: Date, from now: Date) -> String? {
 }
 
 struct CountdownEditor: View {
+    private enum ReminderUnit: Hashable { case days, hours, minutes }
+
     let controller: FloatingWindowController
     let editing: CountdownItem?
-    let onSave: (String, Date, String, String) -> Void
+    let onSave: (String, Date, String, String, String?) -> Void
     let onDelete: () -> Void
     let onCancel: () -> Void
 
@@ -365,8 +368,12 @@ struct CountdownEditor: View {
     @State private var date: Date
     @State private var icon: String
     @State private var colorHex: String
+    @State private var reminderDays: String
+    @State private var reminderHours: String
+    @State private var reminderMinutes: String
+    @FocusState private var focusedReminderUnit: ReminderUnit?
 
-    init(controller: FloatingWindowController, editing: CountdownItem?, onSave: @escaping (String, Date, String, String) -> Void, onDelete: @escaping () -> Void, onCancel: @escaping () -> Void) {
+    init(controller: FloatingWindowController, editing: CountdownItem?, onSave: @escaping (String, Date, String, String, String?) -> Void, onDelete: @escaping () -> Void, onCancel: @escaping () -> Void) {
         self.controller = controller
         self.editing = editing
         self.onSave = onSave
@@ -376,6 +383,12 @@ struct CountdownEditor: View {
         _date = State(initialValue: (editing?.targetDate ?? Date.now.addingTimeInterval(86_400)).roundedToMinute)
         _icon = State(initialValue: editing?.icon ?? IconCatalog.defaultSymbol)
         _colorHex = State(initialValue: editing?.colorHex ?? IconPalette.defaultHex)
+        let maxLead = TimeInterval(36_500 * 86_400 + 23 * 3_600 + 59 * 60)
+        let reminderMinutes = Int(min(ReminderDuration.seconds(editing?.reminderLead ?? "") ?? 0, maxLead)) / 60
+        let hasReminder = reminderMinutes > 0
+        _reminderDays = State(initialValue: hasReminder ? String(reminderMinutes / 1_440) : "")
+        _reminderHours = State(initialValue: hasReminder ? String(reminderMinutes % 1_440 / 60) : "")
+        _reminderMinutes = State(initialValue: hasReminder ? String(reminderMinutes % 60) : "")
     }
 
     var body: some View {
@@ -399,20 +412,50 @@ struct CountdownEditor: View {
             .padding(.horizontal, 12)
             .padding(.top, 10)
 
+            HStack(spacing: 8) {
+                Image(systemName: reminderSeconds == 0 ? "bell" : "bell.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(reminderSeconds == 0 ? Color.liteCountSecondaryText : Color.liteCountBlue)
+                    .help(L10n.reminderLabel)
+                    .accessibilityLabel(L10n.reminderLabel)
+                Text(L10n.reminderLabel)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.liteCountSecondaryText)
+                Spacer(minLength: 0)
+                reminderNumberField($reminderDays, unit: L10n.reminderDayUnit, digits: 5, field: .days)
+                reminderNumberField($reminderHours, unit: L10n.reminderHourUnit, digits: 2, field: .hours)
+                reminderNumberField($reminderMinutes, unit: L10n.reminderMinuteUnit, digits: 2, field: .minutes)
+            }
+            .frame(height: 36)
+            .padding(.horizontal, 10)
+            .background(Color.liteCountElevated, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(Color.liteCountSeparator, lineWidth: 1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+
             if isPast {
                 Text(L10n.pastHint)
                     .font(.system(size: 10.5))
                     .foregroundStyle(Color.red)
                     .padding(.horizontal, 16)
                     .padding(.top, 6)
+            } else if let reminderError {
+                Text(reminderError)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Color.red)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 5)
             }
 
-            Spacer(minLength: 14)
+            Spacer(minLength: 0)
 
             countdownDisplay(at: now)
                 .padding(.horizontal, 12)
 
-            Spacer(minLength: 14)
+            Spacer(minLength: 0)
 
             HStack(spacing: 8) {
                 if editing != nil {
@@ -448,12 +491,15 @@ struct CountdownEditor: View {
                 .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 10)
         }
         .onChange(of: name) { _, _ in controller.pinPanel() }
         .onChange(of: date) { _, _ in controller.pinPanel() }
         .onChange(of: icon) { _, _ in controller.pinPanel() }
         .onChange(of: colorHex) { _, _ in controller.pinPanel() }
+        .onChange(of: reminderDays) { _, _ in controller.pinPanel() }
+        .onChange(of: reminderHours) { _, _ in controller.pinPanel() }
+        .onChange(of: reminderMinutes) { _, _ in controller.pinPanel() }
     }
 
     /// Targets must be in the future; checked live each second.
@@ -462,12 +508,27 @@ struct CountdownEditor: View {
     }
 
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isPast
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isPast && reminderError == nil
+    }
+
+    private var reminderError: String? {
+        guard (Int(reminderDays) ?? 0) <= 36_500,
+              (Int(reminderHours) ?? 0) <= 23,
+              (Int(reminderMinutes) ?? 0) <= 59
+        else { return L10n.reminderRangeHint }
+        guard reminderSeconds > 0 else { return nil }
+        let fireDate = date.roundedToMinute.addingTimeInterval(-reminderSeconds)
+        return fireDate > Date.now && fireDate < date.roundedToMinute ? nil : L10n.reminderTimeHint
+    }
+
+    private var reminderSeconds: TimeInterval {
+        TimeInterval((Int(reminderDays) ?? 0) * 86_400 + (Int(reminderHours) ?? 0) * 3_600 + (Int(reminderMinutes) ?? 0) * 60)
     }
 
     private func save() {
         guard canSave else { return }
-        onSave(name, date.roundedToMinute, icon, colorHex)
+        let lead = reminderSeconds == 0 ? nil : "\(Int(reminderDays) ?? 0)天\(Int(reminderHours) ?? 0)小时\(Int(reminderMinutes) ?? 0)分钟"
+        onSave(name, date.roundedToMinute, icon, colorHex, lead)
     }
 
     private func countdownDisplay(at now: Date) -> some View {
@@ -538,6 +599,35 @@ struct CountdownEditor: View {
             RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .stroke(Color.liteCountSeparator, lineWidth: 1)
         }
+    }
+
+    private func reminderNumberField(_ value: Binding<String>, unit: String, digits: Int, field: ReminderUnit) -> some View {
+        let numeric = Binding<String>(
+            get: { value.wrappedValue },
+            set: { value.wrappedValue = String($0.filter { $0.isASCII && $0.isNumber }.prefix(digits)) }
+        )
+        return HStack(spacing: 4) {
+            TextField("0", text: numeric)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+                .tint(Color.liteCountPrimaryText)
+                .focused($focusedReminderUnit, equals: field)
+                .frame(width: 38, height: 26)
+                .padding(.trailing, 4)
+                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(Color.liteCountSeparator.opacity(focusedReminderUnit == field ? 1 : 0.8), lineWidth: focusedReminderUnit == field ? 1.5 : 1)
+                }
+            Text(unit)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.liteCountSecondaryText)
+                .frame(width: 14, alignment: .leading)
+        }
+        .frame(width: 64)
+        .accessibilityElement(children: .combine)
     }
 
 }

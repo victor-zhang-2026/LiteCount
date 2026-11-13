@@ -24,6 +24,8 @@ LiteCount is a native macOS countdown tool. Set a name and a target time, and it
   About five items fit by default, with scrolling for more. Countdown colors follow item icons. Double-click to edit, or use the context menu to edit or delete.
 - **自动管理** / **Automatic** — 创建即倒计时；按目标时间由近至远排序；重启后自动恢复并重新计算。
   Countdowns start on creation, sort near-to-far, and survive restarts.
+- **到期前提醒** / **Reminder before due** — 在事项编辑页填写提前的天、时、分，系统按设定时间发送一次通知；留空或全零即不提醒。首次设置时请允许 LiteCount 发送通知。
+  Enter days, hours, and minutes before the target for one macOS notification. Empty or all-zero fields disable it. Allow notifications when prompted the first time you set a reminder.
 - **合并式时间选择** / **Combined picker** — 日历与时/分在同一浮层选择，选完即存；格式跟随应用语言。
   A single sheet combines a month calendar with hour/minute columns.
 - **紧凑编辑** / **Compact editing** — 新增与编辑面板和列表等尺寸；从名称框左侧选择图标与颜色，目标时间下方直接显示实时倒计时；切换语言保留未保存草稿。
@@ -46,16 +48,18 @@ LiteCount is a native macOS countdown tool. Set a name and a target time, and it
 1. 从 [Releases](https://github.com/victor-zhang-2026/LiteCount/releases/latest) 下载最新 `LiteCount-<版本>-macOS-arm64.zip` 与 `SHA256SUMS`。
    Download the ZIP and `SHA256SUMS` from Releases.
 2. 校验：`shasum -a 256 -c SHA256SUMS`（在下载目录执行）。Verify the checksum.
-3. 解压并将 `LiteCount.app` 拖入「应用程序」，首次打开需右键 →「打开」（ad-hoc 签名、未公证）。
-   Unzip, move to /Applications, and right-click → Open on first launch (ad-hoc signature, not notarized).
+3. 解压后在 Finder 中右键点击 `LiteCount.app` →「打开」（ad-hoc 签名、未公证）。
+   Unzip, then right-click `LiteCount.app` in Finder and choose Open on first launch (ad-hoc signature, not notarized).
+4. 首次为事项设置提醒时，允许 LiteCount 发送通知；若此前拒绝，请在「系统设置 → 通知 → LiteCount」开启「允许通知」。
+   Allow notifications when you first set a reminder. If previously denied, enable Allow Notifications under System Settings → Notifications → LiteCount.
 
 系统要求 / Requires: **macOS 14+ · Apple Silicon**
 
 ## 隐私 / Privacy
 
-完全本地运行：无账户、无网络、无遥测、无提醒权限。数据以 JSON 存储于 `~/Library/Application Support/LiteCount/`。详见 [docs/privacy.md](docs/privacy.md)。
+完全本地运行：无账户、无网络、无遥测；仅在用户设置提醒时请求系统通知权限。数据以 JSON 存储于 `~/Library/Application Support/LiteCount/`。详见 [docs/privacy.md](docs/privacy.md)。
 
-Fully local: no accounts, no networking, no telemetry, no notification permissions. Data is stored as JSON in your Application Support directory. See [docs/privacy.md](docs/privacy.md).
+Fully local: no accounts, no networking, no telemetry. Notification permission is requested only when you set a reminder. Data is stored as JSON in your Application Support directory. See [docs/privacy.md](docs/privacy.md).
 
 ## 构建 / Build
 

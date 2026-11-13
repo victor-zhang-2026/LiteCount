@@ -7,6 +7,7 @@ struct CountdownItem: Identifiable, Codable, Equatable, Sendable {
     var targetDate: Date
     var icon: String
     var colorHex: String
+    var reminderLead: String?
     let createdAt: Date
 
     init(
@@ -15,6 +16,7 @@ struct CountdownItem: Identifiable, Codable, Equatable, Sendable {
         targetDate: Date,
         icon: String = "star",
         colorHex: String = IconPalette.defaultHex,
+        reminderLead: String? = nil,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -22,11 +24,12 @@ struct CountdownItem: Identifiable, Codable, Equatable, Sendable {
         self.targetDate = targetDate
         self.icon = icon
         self.colorHex = colorHex
+        self.reminderLead = reminderLead
         self.createdAt = createdAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, targetDate, icon, colorHex, createdAt
+        case id, name, targetDate, icon, colorHex, reminderLead, createdAt
     }
 
     init(from decoder: Decoder) throws {
@@ -36,6 +39,7 @@ struct CountdownItem: Identifiable, Codable, Equatable, Sendable {
         targetDate = try values.decode(Date.self, forKey: .targetDate)
         icon = try values.decodeIfPresent(String.self, forKey: .icon) ?? "star"
         colorHex = try values.decodeIfPresent(String.self, forKey: .colorHex) ?? IconPalette.defaultHex
+        reminderLead = try values.decodeIfPresent(String.self, forKey: .reminderLead)
         createdAt = try values.decode(Date.self, forKey: .createdAt)
     }
 }

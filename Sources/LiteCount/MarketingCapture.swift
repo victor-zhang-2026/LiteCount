@@ -131,7 +131,7 @@ final class CaptureDelegate: NSObject, NSApplicationDelegate {
         let editor = CountdownEditor(
             controller: controller,
             editing: store.upcoming(at: .now).first,
-            onSave: { _, _, _, _ in },
+            onSave: { _, _, _, _, _ in },
             onDelete: {},
             onCancel: {}
         )

@@ -8,12 +8,16 @@ final class CountdownStore {
         didSet { onCountChanged?(items.count) }
     }
     @ObservationIgnored var onCountChanged: ((Int) -> Void)?
+    @ObservationIgnored private let reminders: ReminderScheduler?
 
     private let fileURL: URL
 
     init(fileURL: URL? = nil) {
         self.fileURL = fileURL ?? Self.defaultFileURL()
+        let hasDataOverride = !(ProcessInfo.processInfo.environment["LITECOUNT_DATA_DIR"] ?? "").isEmpty
+        reminders = fileURL == nil && !hasDataOverride ? ReminderScheduler() : nil
         load()
+        reminders?.synchronize(items)
     }
 
     func upcoming(at now: Date) -> [CountdownItem] {
@@ -28,7 +32,7 @@ final class CountdownStore {
         items.count { $0.targetDate > now }
     }
 
-    func add(name rawName: String, targetDate: Date, icon rawIcon: String, colorHex rawColorHex: String) {
+    func add(name rawName: String, targetDate: Date, icon rawIcon: String, colorHex rawColorHex: String, reminderLead: String? = nil) {
         let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
         let date = targetDate.roundedToMinute
@@ -36,9 +40,11 @@ final class CountdownStore {
             name: name,
             targetDate: date,
             icon: IconCatalog.sanitized(rawIcon),
-            colorHex: IconPalette.sanitized(rawColorHex)
+            colorHex: IconPalette.sanitized(rawColorHex),
+            reminderLead: reminderLead
         ))
         save()
+        reminders?.synchronize(items, requestPermission: reminderLead != nil)
     }
 
     func update(
@@ -46,7 +52,8 @@ final class CountdownStore {
         name rawName: String,
         targetDate: Date,
         icon rawIcon: String,
-        colorHex rawColorHex: String
+        colorHex rawColorHex: String,
+        reminderLead: String?
     ) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -55,12 +62,15 @@ final class CountdownStore {
         items[index].targetDate = targetDate.roundedToMinute
         items[index].icon = IconCatalog.sanitized(rawIcon)
         items[index].colorHex = IconPalette.sanitized(rawColorHex)
+        items[index].reminderLead = reminderLead
         save()
+        reminders?.synchronize(items, requestPermission: reminderLead != nil)
     }
 
     func delete(_ id: UUID) {
         items.removeAll { $0.id == id }
         save()
+        reminders?.synchronize(items)
     }
 
     /// QA/marketing capture only: start from an empty isolated store.
@@ -68,6 +78,7 @@ final class CountdownStore {
         items = []
         try? FileManager.default.removeItem(at: fileURL)
         try? FileManager.default.removeItem(at: backupFileURL)
+        reminders?.synchronize(items)
     }
 
     private func load() {

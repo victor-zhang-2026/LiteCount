@@ -1,10 +1,12 @@
 import AppKit
+import UserNotifications
 
 @main
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var store: CountdownStore!
     private var windowController: FloatingWindowController!
+    private let reminderPresentationDelegate = ReminderPresentationDelegate()
 
     static func main() {
         if MarketingCapture.isEnabled {
@@ -49,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = reminderPresentationDelegate
         store = CountdownStore()
         windowController = FloatingWindowController(store: store)
         windowController.showTrigger()
